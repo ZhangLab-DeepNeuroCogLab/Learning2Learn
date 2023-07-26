@@ -30,7 +30,7 @@ After extracting the NOD dataset, run the following command from ```Learning2Lea
 
 Refer to ```Learning2Learn/continual baselines/help.md``` for possible arguments.
 
-## Schematic Illustration of all Working Memory tasks
+## Schematic Illustration of the Problem Setting
 
 <br>
 <p align="center"><img align="center"  src="./images/Parantak_intro-cropped.png" alt="..." width="550">
