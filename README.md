@@ -8,3 +8,24 @@ Our education system comprises a series of curricula. For example, when we learn
 
 Download the NOD dataset from [HERE](https://drive.google.com/drive/folders/1SPA8TIZr20VZodPs7feFk8DYPiCOPXbE?usp=sharing) \
 Extract the dataset to ```Learning2Learn/continual baselines/data/```
+
+PyTorch `Dataset` for each of our custom tasks can be found in ```Learning2Learn/continual baselines/utils/custom_datasets.py```
+
+### Dependencies
+
+- tested with python 3.8 and cuda 11.3
+- dependencies can be installed using `/requirements.txt`
+
+## Training and Testing
+After extracting the NOD dataset, run the following command from ```Learning2Learn/continual baselines``` directory to train on dataset 'x' with strategy 'y'\
+- dataset - (FashionMNIST/MNIST/CIFAR10)\
+	strategy - (naive/ewc/lwf)\
+	`python paradigm-I.py --num_subset_classes 5 --num_runs 3 --logging_only True --dataset x --strategy y`\
+- dataset - (NOD)\
+  strategy - (naive/ewc/lwf)\
+	`python paradigm-I.py --num_experiences 4 --num_runs 3 --logging_only True --dataset NovelNet --strategy y`\
+	
+	*to generate agreement between curricula\
+	set the follwing args with logging: `--strategy_comparison True --no_avg_strategy True`\
+
+Refer to ```Learning2Learn/continual baselines/help.md``` for possible arguments.
