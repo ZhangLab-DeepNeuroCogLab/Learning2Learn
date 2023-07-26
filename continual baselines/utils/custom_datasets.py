@@ -3,6 +3,7 @@ import random
 from PIL import Image
 from typing import Optional, Callable, List
 import numpy as np
+from pyparsing import Any
 from .noise_utils import Noise as n
 from .dataconfig.inetmapping import imagenet_mapping, exclusion_mapping, class2idx
 from .config import data_dir
@@ -115,7 +116,8 @@ class CustomStyleNet(Dataset):
                     targets.append(style_label)
 
             if self.samples_per_class is not None:
-                data, targets = zip(*random.sample(list(zip(data, targets)), self.samples_per_class))
+                data, targets = zip(
+                    *random.sample(list(zip(data, targets)), self.samples_per_class))
             self.data.extend(data)
             self.targets.extend(targets)
 
@@ -238,12 +240,14 @@ class CustomImageNet(Dataset):
                 targets.append(class_label)
 
             if self.samples_per_class is not None:
-                data, targets = zip(*random.sample(list(zip(data, targets)), self.samples_per_class))
+                data, targets = zip(
+                    *random.sample(list(zip(data, targets)), self.samples_per_class))
             self.data.extend(data)
             self.targets.extend(targets)
 
         if self.return_style_labels:
-            self.style_targets = [CustomStyleNet.style_dict[self.style]] * self.__len__()
+            self.style_targets = [
+                CustomStyleNet.style_dict[self.style]] * self.__len__()
 
     def __len__(self):
         return len(self.targets)
@@ -433,7 +437,8 @@ class CustomNoiseNet(Dataset):
         return len(self.style_targets)
 
     def __getitem__(self, idx):
-        image, style_target, noise_target = Image.open(self.data[idx]), self.style_targets[idx], self.noise_targets[idx]
+        image, style_target, noise_target = Image.open(
+            self.data[idx]), self.style_targets[idx], self.noise_targets[idx]
 
         if len(np.asarray(image).shape) == 2:
             np_img = np.asarray(image)
@@ -623,6 +628,7 @@ class ImageNet2012(Dataset):
                 continue
             try:
                 class_label = imagenet_mapping[_class]
+                class_label = class2idx[class_label]
             except KeyError:
                 continue
 
@@ -640,10 +646,138 @@ class ImageNet2012(Dataset):
                 targets.append(class_label)
 
             if self.samples_per_class is not None:
-                data, targets = zip(*random.sample(list(zip(data, targets)), self.samples_per_class))
+                data, targets = zip(
+                    *random.sample(list(zip(data, targets)), self.samples_per_class))
             self.data.extend(data)
             self.targets.extend(targets)
 
+    def __len__(self):
+        return len(self.targets)
+
+    def __getitem__(self, idx):
+        image, target = Image.open(self.data[idx]), self.targets[idx]
+
+        if self.transform is not None:
+            if len(np.asarray(image).shape) == 2:
+                np_img = np.asarray(image)
+                np_img = np.stack((np_img,) * 3, axis=-1)
+                image = Image.fromarray(np_img)
+            elif np.asarray(image).shape[2] > 3:
+                image = image.convert('RGB')
+            image = self.transform(image)
+
+        return image, target
+
+
+class ImageNetSC(Dataset):
+    """ dataset arranged specifically to study categorical arrangement
+    Args:
+        root_dir (string): Root directory where ImageNet and its stylized variants are stored
+        train (bool, optional): If True, creates dataset from training set, otherwise
+            creates from val set
+        transform (callable, optional): A function/transform that accepts a JPEG/PIL and
+            transforms it
+        spec_target: If specified, returns data only belonging to the listed targets
+        samples_per_class: (int, optional): number of samples per class
+    """
+
+    base_name = 'ImageNet_SC'
+    class_dict = {
+        'n02091244': 0, 'n02091134': 1, 'n02093859': 2, 'n02099429': 3, 
+        'n02106662': 4, 'n02105056': 5, 'n02701002': 6, 'n03345487': 7,
+        'n03417042': 8, 'n04285008': 9, 'n04037443': 10, 'n03425413': 11
+    }
+    category_dict = {
+        'n02091244': 0, 'n02093859': 0, 'n02106662': 0, 'n02091134': 0,
+        'n02099429': 0, 'n02105056': 0,
+        'n02701002': 1, 'n03417042': 1, 'n04037443': 1, 'n03345487': 1,
+        'n04285008': 1, 'n03425413': 1
+
+    }
+
+    std_transform = {
+        'train': transforms.Compose(
+            [
+                transforms.RandomResizedCrop(224),
+                transforms.RandomHorizontalFlip(),
+                transforms.ToTensor(),
+                transforms.Normalize(
+                    mean=[0.485, 0.456, 0.406],
+                    std=[0.229, 0.224, 0.225]
+                )
+            ]
+        ),
+        'eval': transforms.Compose(
+            [
+                transforms.Resize(256),
+                transforms.CenterCrop(224),
+                transforms.ToTensor(),
+                transforms.Normalize(
+                    mean=[0.485, 0.456, 0.406],
+                    std=[0.229, 0.224, 0.225]
+                )
+            ]
+        )
+    }
+
+    def __init__(
+            self,
+            root: str,
+            train: bool = True,
+            transform: Optional[Callable] = None,
+            spec_target: List[int] = None,
+            samples_per_class: int = None,
+            download: bool = False,
+            category: bool = False
+    ):
+        self.root = root
+        self.train = train
+        self.transform = transform
+        self.spec_target = spec_target
+        self.samples_per_class = samples_per_class
+        self.download = download
+        self.category = category
+
+        main_dir = os.path.join(self.root, ImageNetSC.base_name)
+        if train:
+            main_dir = '{}/train/'.format(main_dir)
+        else:
+            main_dir = '{}/val/'.format(main_dir)
+
+        self.data: Any = []
+        self.targets = []
+
+        if not self.category:
+            for _class in ImageNetSC.class_dict.keys():
+                file_list = os.listdir(os.path.join(main_dir, _class))
+                class_label = ImageNetSC.class_dict[_class]
+
+                if (
+                    self.spec_target is not None
+                    and class_label not in self.spec_target
+                ):
+                    continue
+
+                for _file in file_list:
+                    im = os.path.join(main_dir, _class, _file)
+                    self.data.append(im)
+                    self.targets.append(class_label)
+        else:
+            for _class in ImageNetSC.category_dict.keys():
+                file_list = os.listdir(os.path.join(main_dir, _class))
+                class_label = ImageNetSC.category_dict[_class]
+
+                if (
+                    self.spec_target is not None
+                    and class_label not in self.spec_target
+                ):
+                    continue
+
+                for _file in file_list:
+                    im = os.path.join(main_dir, _class, _file)
+                    self.data.append(im)
+                    self.targets.append(class_label)
+            
     def __len__(self):
         return len(self.targets)
 
@@ -710,11 +844,14 @@ class CustomMNISTNet(Dataset):
         self.samples_per_class = samples_per_class
 
         self.data, self.targets = [], []
-        dataset = datasets.MNIST(root=self.root, train=self.train, download=self.download)
+        dataset = datasets.MNIST(
+            root=self.root, train=self.train, download=self.download)
         for target in self.spec_target:
             temp_dataset = [(x[0], x[1]) for x in dataset if x[1] == target]
-            data, targets = [x[0] for x in temp_dataset], [x[1] for x in temp_dataset]
-            data, targets = zip(*random.sample(list(zip(data, targets)), self.samples_per_class))
+            data, targets = [x[0] for x in temp_dataset], [x[1]
+                                                           for x in temp_dataset]
+            data, targets = zip(
+                *random.sample(list(zip(data, targets)), self.samples_per_class))
             self.data.extend(data), self.targets.extend(targets)
 
     def __len__(self):
@@ -777,11 +914,14 @@ class CustomFashionMNISTNet(Dataset):
         self.samples_per_class = samples_per_class
 
         self.data, self.targets = [], []
-        dataset = datasets.FashionMNIST(root=self.root, train=self.train, download=self.download)
+        dataset = datasets.FashionMNIST(
+            root=self.root, train=self.train, download=self.download)
         for target in self.spec_target:
             temp_dataset = [(x[0], x[1]) for x in dataset if x[1] == target]
-            data, targets = [x[0] for x in temp_dataset], [x[1] for x in temp_dataset]
-            data, targets = zip(*random.sample(list(zip(data, targets)), self.samples_per_class))
+            data, targets = [x[0] for x in temp_dataset], [x[1]
+                                                           for x in temp_dataset]
+            data, targets = zip(
+                *random.sample(list(zip(data, targets)), self.samples_per_class))
             self.data.extend(data), self.targets.extend(targets)
 
     def __len__(self):
@@ -830,11 +970,14 @@ class CustomCIFAR10Net(Dataset):
         self.samples_per_class = samples_per_class
 
         self.data, self.targets = [], []
-        dataset = datasets.CIFAR10(root=self.root, train=self.train, download=self.download)
+        dataset = datasets.CIFAR10(
+            root=self.root, train=self.train, download=self.download)
         for target in self.spec_target:
             temp_dataset = [(x[0], x[1]) for x in dataset if x[1] == target]
-            data, targets = [x[0] for x in temp_dataset], [x[1] for x in temp_dataset]
-            data, targets = zip(*random.sample(list(zip(data, targets)), self.samples_per_class))
+            data, targets = [x[0] for x in temp_dataset], [x[1]
+                                                           for x in temp_dataset]
+            data, targets = zip(
+                *random.sample(list(zip(data, targets)), self.samples_per_class))
             self.data.extend(data), self.targets.extend(targets)
 
     def __len__(self):
@@ -886,11 +1029,14 @@ class ComparatorNet(Dataset):
                 root=data_dir, spec_target=class_group, train=True, transform=dataset.std_transform['train'],
                 samples_per_class=self.samples_per_class
             )
-            _data = DataLoader(_data, batch_size=64, shuffle=True, num_workers=0)
+            _data = DataLoader(_data, batch_size=64,
+                               shuffle=True, num_workers=0)
             mean_batch_vectors = []
             for batch in _data:
-                mean_batch_vectors.append(torch.mean(self.embedder(batch[0]), axis=0))
-            class_datasets[class_group[0]] = torch.mean(torch.stack(mean_batch_vectors), axis=0).detach().cpu().numpy()
+                mean_batch_vectors.append(torch.mean(
+                    self.embedder(batch[0]), axis=0))
+            class_datasets[class_group[0]] = torch.mean(torch.stack(
+                mean_batch_vectors), axis=0).detach().cpu().numpy()
 
         self.data, self.targets = [], []
         self.curriculum_vectors = dict()
@@ -920,8 +1066,10 @@ class ComparatorNet(Dataset):
 
     def __getitem__(self, idx):
         data, target = self.data[idx], self.targets[idx]
-        datum = self.curriculum_vectors[data[0]] + self.curriculum_vectors[data[0]]
-        datum = [datum[i: i + self.hop_size] for i in range(0, len(datum), self.hop_size)]
+        datum = self.curriculum_vectors[data[0]
+                                        ] + self.curriculum_vectors[data[0]]
+        datum = [datum[i: i + self.hop_size]
+                 for i in range(0, len(datum), self.hop_size)]
 
         return torch.FloatTensor(datum), target
 
@@ -971,11 +1119,13 @@ class ComparatorNet3D(Dataset):
                 if curriculum_i not in self.curriculum_representations.keys():
                     for _class in curriculum_i:
                         datum_i.append(class_datasets[int(_class)])
-                    self.curriculum_representations[curriculum_i] = torch.stack(datum_i, 1)
+                    self.curriculum_representations[curriculum_i] = torch.stack(
+                        datum_i, 1)
                 if curriculum_j not in self.curriculum_representations.keys():
                     for _class in curriculum_j:
                         datum_j.append(class_datasets[int(_class)])
-                    self.curriculum_representations[curriculum_j] = torch.stack(datum_j, 1)
+                    self.curriculum_representations[curriculum_j] = torch.stack(
+                        datum_j, 1)
                 datum = (curriculum_i, curriculum_j)
                 self.data.append(datum)
 
@@ -985,8 +1135,9 @@ class ComparatorNet3D(Dataset):
     def __getitem__(self, idx):
         data, target = self.data[idx], self.targets[idx]
         representation = torch.concat(
-                [self.curriculum_representations[data[0]], self.curriculum_representations[data[1]]], 1
-            )
+            [self.curriculum_representations[data[0]],
+                self.curriculum_representations[data[1]]], 1
+        )
         representation = representation.detach().cpu().numpy()
 
         return representation, target
@@ -1038,11 +1189,13 @@ class ComparatorNetV2(Dataset):
                 if curriculum_i not in self.curriculum_representations.keys():
                     for _class in curriculum_i:
                         datum_i.append(class_datasets[int(_class)])
-                    self.curriculum_representations[curriculum_i] = torch.stack(datum_i, 0)
+                    self.curriculum_representations[curriculum_i] = torch.stack(
+                        datum_i, 0)
                 if curriculum_j not in self.curriculum_representations.keys():
                     for _class in curriculum_j:
                         datum_j.append(class_datasets[int(_class)])
-                    self.curriculum_representations[curriculum_j] = torch.stack(datum_j, 0)
+                    self.curriculum_representations[curriculum_j] = torch.stack(
+                        datum_j, 0)
                 datum = (curriculum_i, curriculum_j)
                 self.data.append(datum)
 
@@ -1052,9 +1205,9 @@ class ComparatorNetV2(Dataset):
     def __getitem__(self, idx):
         data, target = self.data[idx], self.targets[idx]
         representation = torch.cat(
-            (self.curriculum_representations[data[0]], self.curriculum_representations[data[1]]), 0
+            (self.curriculum_representations[data[0]],
+             self.curriculum_representations[data[1]]), 0
         )
         representation = representation.detach().cpu().numpy()
 
         return representation, target
-

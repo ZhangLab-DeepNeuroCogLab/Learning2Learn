@@ -244,6 +244,7 @@ class BinnedStringComparator:
                         avg_counter[idx].append(score)
                     columns.append("{} vs {}".format(self.strategies[i], self.strategies[j]))
             for i in range(self.n_bins):
+                print("algo, bin idx {}:".format(avg_counter[i]))
                 self.avg_dists[i].append(np.mean(avg_counter[i]))
         else:
             avg_counter = [[] for _ in range(self.n_bins)]
@@ -274,6 +275,7 @@ class BinnedStringComparator:
                         avg_counter[idx].append(score)
                     columns.append("{} vs hscore".format(self.strategies[i]))
             for i in range(self.n_bins):
+                print("algo, bin idx {}:".format(avg_counter[i]))
                 self.avg_dists[i].append(np.mean(avg_counter[i]))
 
         if self.hscore is None:
@@ -295,6 +297,7 @@ class BinnedStringComparator:
                     avg_counter[idx].append(score)
                 columns.append("{} vs ascore".format(self.strategies[i]))
             for i in range(self.n_bins):
+                print("cd, bin idx {}:".format(avg_counter[i]))
                 self.avg_dists[i].append(np.mean(avg_counter[i]))
         else:
             avg_counter = [[] for _ in range(self.n_bins)]
@@ -315,6 +318,7 @@ class BinnedStringComparator:
                     avg_counter[idx].append(score)
                 columns.append("hscore vs ascore")
             for i in range(self.n_bins):
+                print("cd, bin idx {}:".format(avg_counter[i]))
                 self.avg_dists[i].append(np.mean(avg_counter[i]))
 
         if self.hscore is None:
@@ -341,6 +345,7 @@ class BinnedStringComparator:
                     avg_counter[idx].append(y[idx][-1])
                 columns.append("{} vs random".format(self.strategies[i]))
             for i in range(self.n_bins):
+                print("random, bin idx {}:".format(avg_counter[i]))
                 self.avg_dists[i].append(np.mean(avg_counter[i]))
         else:
             avg_counter = [[] for _ in range(self.n_bins)]
@@ -366,6 +371,7 @@ class BinnedStringComparator:
                     avg_counter[idx].append(y[idx][-1])
                 columns.append("hscore vs random")
             for i in range(self.n_bins):
+                print("random, bin idx {}:".format(avg_counter[i]))
                 self.avg_dists[i].append(np.mean(avg_counter[i]))
 
 

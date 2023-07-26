@@ -1,4 +1,5 @@
 from .noise_utils import Noise as n
+from .dataconfig.inetmapping import class2idx
 
 class_dict = {
     'airplane': 0, 'car': 1, 'bird': 2, 'cat': 3,
@@ -26,7 +27,7 @@ novel_dict = {
 seed = 1235
 alt_seed = 1234
 
-data_dir = '/home/user/Documents/data'
-weights_dir = '/home/user/Documents/models/weights'
+data_dir = '/home/parantak/Documents/data'
+weights_dir = '/home/parantak/Documents/models/weights'
 
 inet_classes = [i for i in range(900)]

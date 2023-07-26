@@ -17,7 +17,7 @@ class NaiveEval(EvalUtils):
         super().__init__()
 
     @staticmethod
-    def evaluate_model(model, device, loss_fn, loader):
+    def evaluate_model(model, device, loss_fn, loader, gpu=None):
         if loader.dataset.train:
             print("\n[EVAL ON TRAINING DATA]")
         else:
@@ -29,7 +29,13 @@ class NaiveEval(EvalUtils):
 
         with torch.no_grad():
             for _, (image, label) in enumerate(loader):
-                image, label = image.to(device), label.to(device)
+                if device is not None:
+                    image, label = image.to(device), label.to(device)
+                else:
+                    if gpu is not None:
+                        image = image.cuda(gpu, non_blocking=True)
+                    if torch.cuda.is_available():
+                        label = label.cuda(gpu, non_blocking=True)
                 scores = model(image)
 
                 try:
@@ -116,3 +122,20 @@ class MTLEval(EvalUtils):
             )
 
             return accuracy_obj, accuracy_sty, cr_obj, cr_sty
+
+
+class EvalF:
+    '''
+    helper utility for calculating average F-score
+    '''
+    def __init__(self, t1_accuracy_dict, avg_accuracy_dict):
+        self.t1_accuracy_dict = t1_accuracy_dict
+        self.avg_accuracy_dict = avg_accuracy_dict
+        self.len = len(list(self.avg_accuracy_dict.values()))
+
+    def __call__(self):
+        fscore = 0.0
+        for val_avg, val_t1 in zip(self.avg_accuracy_dict.values(), self.t1_accuracy_dict.values()):
+            fscore += (2 * val_avg[-1]) / ((val_t1[0] - val_t1[-1]) * val_avg[-1] + 1)
+        
+        print("average F: {}".format(fscore/self.len))
