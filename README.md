@@ -26,7 +26,7 @@ After extracting the NOD dataset, run the following command from ```Learning2Lea
 	`python paradigm-I.py --num_experiences 4 --num_runs 3 --logging_only True --dataset NovelNet --strategy y`\
 	
 	*to generate agreement between curricula\
-	set the follwing args with logging: `--strategy_comparison True --no_avg_strategy True`\
+	set the follwing args with logging: `--strategy_comparison True --no_avg_strategy True`
 
 Refer to ```Learning2Learn/continual baselines/help.md``` for possible arguments.
 
