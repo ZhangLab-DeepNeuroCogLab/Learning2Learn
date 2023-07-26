@@ -29,3 +29,9 @@ After extracting the NOD dataset, run the following command from ```Learning2Lea
 	set the follwing args with logging: `--strategy_comparison True --no_avg_strategy True`\
 
 Refer to ```Learning2Learn/continual baselines/help.md``` for possible arguments.
+
+## Schematic Illustration of all Working Memory tasks
+
+<br>
+<p align="center"><img align="center"  src="./images/Parantak_intro-cropped.png" alt="..." width="550">
+</p>
