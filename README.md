@@ -1,2 +1,10 @@
-# Learning2Learn
-Learning to Learn: How to Continuously Teach Humans and Machines
+# Learning to Learn: How to Continuously Teach Humans and Machines
+
+Authors: Parantak Singh, You Li, Ankur Sikarwar, Weixian Lei, Daniel Gao, Morgan Bruce Talbot, Ying Sun, Mike Zheng Shou, Gabriel Kreiman, Mengmi Zhang
+
+Our education system comprises a series of curricula. For example, when we learn mathematics at school, we learn in order from addition to multiplication, and later to integration.  Delineating a curriculum for teaching either a human or a machine shares the underlying goal of maximizing the positive knowledge transfer from early to later tasks and minimizing forgetting of the early tasks. Here, we exhaustively surveyed the effect of curricula on existing continual learning algorithms in the class-incremental setting, where algorithms must learn classes one at a time from a single pass of the data stream. We observed that across a breadth of possible class orders (curricula), curricula influence the retention of information and that this effect is not just a product of stochasticity. Further, as a primary effort toward automated curriculum design, we proposed a method capable of designing and ranking effective curricula based on inter-class feature similarities. We compared the predicted curricula against empirically determined effective curricula and observed significant overlaps between the two. To support the study of a curriculum designer, we conducted a series of human psychophysics experiments and contributed a new continual learning benchmark in object recognition. We assessed the degree of agreement in effective curricula between humans and machines. Our curriculum designer predicts a reasonable set of curricula that is effective for human learning. There are many considerations in curriculum designs, such as timely student feedback and learning with multiple modalities. Our study is the first attempt to set a standard framework for the community to tackle the problem of teaching humans and machines to learn to learn continuously.
+
+## Novel Object Dataset (NOD)
+
+Download the NOD dataset from [HERE](https://drive.google.com/drive/folders/1SPA8TIZr20VZodPs7feFk8DYPiCOPXbE?usp=sharing) \
+Extract the dataset to ```Learning2Learn/continual baselines/data/```
