@@ -511,6 +511,5 @@ if __name__ == '__main__':
         save_loc='{}-avg_{}'.format(_strategy, _dataset)
     )
 
-    if _strategy == 'replay':
-        replay_eval = EvalF(t1_accuracy_dict, avg_accuracy_dict)
-        replay_eval()
+    eval = EvalF(t1_accuracy_dict, avg_accuracy_dict)
+    eval()
