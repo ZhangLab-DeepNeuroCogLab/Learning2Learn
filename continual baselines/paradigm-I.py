@@ -1,24 +1,16 @@
-import argparse
-import numpy as np
-import pandas as pd
-import random
 import pickle
-import sys
 import json
 
 import torch
 import torch.nn as nn
 import torchvision.datasets as datasets
-from torch.utils.data import DataLoader
 from torch.nn import CrossEntropyLoss
 from torch.optim import Adam
 from torch.optim.lr_scheduler import MultiStepLR
-from tensorboardX import SummaryWriter
-from torchvision import transforms
 
 from avalanche.benchmarks.generators import nc_benchmark
 from avalanche.training.strategies import Naive, EWC, LwF, SynapticIntelligence
-from avalanche.training.plugins import EvaluationPlugin, EarlyStoppingPlugin
+from avalanche.training.plugins import EvaluationPlugin, EarlyStoppingPlugin, ReplayPlugin
 from avalanche.models import SimpleCNN
 from avalanche.logging import (
     InteractiveLogger,
@@ -38,20 +30,20 @@ from utils.custom_datasets import (
     CustomImageNet, CustomStyleNet, CustomParadigmDataset,
     CustomNovelNet, ImageNet2012
 )
-from utils.log_utils import ProgressBar, AvalancheParser
-from utils.eval_utils import NaiveEval
+from utils.log_utils import AvalancheParser
 from utils import config
+from utils.eval_utils import EvalF
 from utils.curriculum_utils import (
     save_res, load_res, ImageNetCurriculum, StyleNetCurriculum,
     CIFAR10Curriculum, MNISTCurriculum, FashionMNISTCurriculum,
     NovelNetCurriculum, FashionMNIST5Curriculum, MNIST5Curriculum,
     ImageNet5Curriculum, CIFAR105Curriculum
 )
-from utils.graph_utils import get_stderr, plot_errorbar, plot_multiline
+from utils.graph_utils import plot_multiline
 from utils.custom_transforms import Grayscale
-from models.SqueezeNet import SqueezeNet
+from models.SqueezeNet import SqueezeNet, SqueezeNet_random
 from models.TestNet import TestNet
-from models.ResNet import ResNet
+from models.ResNet import ResNet, ResNet32_CIFAR100
 from seed import seed_reproduce
 
 parser = P1ArgumentParser()
@@ -244,6 +236,12 @@ if __name__ == '__main__':
                 elif args.model == 'ResNet':
                     net = ResNet(pretrained=pretrained, num_classes=num_actual)
                     model = net()
+                elif args.model == 'ResNet32_CIFAR100':
+                    net = ResNet32_CIFAR100(pretrained=pretrained, num_classes=num_actual)
+                    model = net()
+                elif args.model == 'SqueezeNet_random':
+                    net = SqueezeNet_random(pretrained=False, num_classes=num_actual)
+                    model = net()
                 elif args.model == 'TestNet':
                     model = TestNet()
                 elif args.model == 'SimpleCNN':
@@ -311,7 +309,15 @@ if __name__ == '__main__':
                     plugins = None
                 loss_fn = CrossEntropyLoss()
 
-                if _strategy == 'naive':
+                # replay buffer
+                if _strategy == 'replay':
+                    mem_size = int((1/10) * len(tr))
+                    if plugins is not None:
+                        plugins.append(ReplayPlugin(mem_size=mem_size))
+                    else:
+                        plugins = [ReplayPlugin(mem_size=mem_size)]
+
+                if _strategy in ['naive', 'replay']:
                     strategy = Naive(
                         model=model.module, optimizer=optimizer, criterion=loss_fn,
                         train_mb_size=tr_batch_size, train_epochs=epochs, eval_mb_size=ts_batch_size,
@@ -451,7 +457,7 @@ if __name__ == '__main__':
         DataUtils.avg_across_dicts(t1_accuracy_dicts),
         DataUtils.avg_across_dicts(avg_accuracy_dicts)
     )
-    if strategy_comp:
+    if strategy_comp and _strategy != 'replay':
         if not no_avg_strategy:
             avg_accuracy_dict_alt = [
                 DataUtils.avg_across_dicts(dict_alt) for dict_alt in avg_accuracy_dicts_alt if dict_alt
@@ -475,10 +481,11 @@ if __name__ == '__main__':
                 t1_accuracy_dict_alt[idx] = temp
 
 
-    curriculum_finder = curriculum_util(avg_accuracy_dict, t1_accuracy_dict, "{}-curriculum_{}".format(_strategy, _dataset),
-                                        layer=snet_layer, n_bins=n_bins, percentile=percentile,
-                                        result_dict_2=avg_accuracy_dict_alt, t1_dict_2=t1_accuracy_dict_alt)
-    curriculum_finder()
+    if _strategy != 'replay':
+        curriculum_finder = curriculum_util(avg_accuracy_dict, t1_accuracy_dict, "{}-curriculum_{}".format(_strategy, _dataset),
+                                            layer=snet_layer, n_bins=n_bins, percentile=percentile,
+                                            result_dict_2=avg_accuracy_dict_alt, t1_dict_2=t1_accuracy_dict_alt)
+        curriculum_finder()
 
     plot_multiline(
         x=[i for i in range(n_experiences)],
@@ -491,7 +498,7 @@ if __name__ == '__main__':
         map_type=map_type,
         save_loc='{}-t1_{}'.format(_strategy, _dataset)
     )
-
+    
     plot_multiline(
         x=[i for i in range(n_experiences)],
         Y=list(avg_accuracy_dict.values()),
@@ -503,3 +510,7 @@ if __name__ == '__main__':
         title='Mean accuracy \n (Current + Previous tasks)',
         save_loc='{}-avg_{}'.format(_strategy, _dataset)
     )
+
+    if _strategy == 'replay':
+        replay_eval = EvalF(t1_accuracy_dict, avg_accuracy_dict)
+        replay_eval()
