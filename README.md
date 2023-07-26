@@ -17,7 +17,8 @@ PyTorch `Dataset` for each of our custom tasks can be found in ```Learning2Learn
 - dependencies can be installed using `/requirements.txt`
 
 ## Training and Testing
-After extracting the NOD dataset, run the following command from ```Learning2Learn/continual baselines``` directory to train on dataset 'x' with strategy 'y'
+After extracting the NOD dataset, run the following command from ```Learning2Learn/continual baselines``` directory to extract logs on dataset 'x' with strategy 'y'\
+Do not set the -logging_only argument if you want to train from scratch
 - dataset - (FashionMNIST/MNIST/CIFAR10)\
 	strategy - (naive/ewc/lwf)\
 	`python paradigm-I.py --num_subset_classes 5 --num_runs 3 --logging_only True --dataset x --strategy y`\
