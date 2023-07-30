@@ -1,4 +1,4 @@
-# Learning to Learn: How to Continuously Teach Humans and Machines
+# Learning to Learn: How to Continuously Teach Humans and Machines (ICCV 2023)
 
 Authors: Parantak Singh, You Li, Ankur Sikarwar, Weixian Lei, Daniel Gao, Morgan Bruce Talbot, Ying Sun, Mike Zheng Shou, Gabriel Kreiman, Mengmi Zhang
 
@@ -21,15 +21,19 @@ After extracting the NOD dataset, run the following command from ```Learning2Lea
 Do not set the -logging_only argument if you want to train from scratch
 - dataset - (FashionMNIST/MNIST/CIFAR10)\
 	strategy - (naive/ewc/lwf)\
-	`python paradigm-I.py --num_subset_classes 5 --num_runs 3 --logging_only True --dataset x --strategy y`\
+	`python paradigm-I.py --num_subset_classes 5 --num_runs 3 --logging_only True --dataset x --strategy y`
 - dataset - (NOD)\
   strategy - (naive/ewc/lwf)\
-	`python paradigm-I.py --num_experiences 4 --num_runs 3 --logging_only True --dataset NovelNet --strategy y`\
+	`python paradigm-I.py --num_experiences 4 --num_runs 3 --logging_only True --dataset NovelNet --strategy y`
 	
 	*to generate agreement between curricula\
 	set the follwing args with logging: `--strategy_comparison True --no_avg_strategy True`
 
 Refer to ```Learning2Learn/continual baselines/help.md``` for possible arguments.
+
+## Psychophysics Experiments
+To launch the psychophysics experiments highlighted in the paper, refer to the following repository:
+[NOD-Experiment](https://github.com/ZhangLab-DeepNeuroCogLab/nod-experiment)
 
 ## Schematic Illustration of the Problem Setting
 
